@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hotel Menu</title>
+<title>Satyabati Hindu Hotel</title>
 
 <style>
 body {
@@ -16,14 +16,14 @@ body {
   position: sticky;
   top: 0;
   background: #ffffff;
-  padding: 12px;
+  padding: 14px;
   text-align: center;
   font-size: 20px;
   font-weight: bold;
   border-bottom: 1px solid #eee;
 }
 
-/* Filter buttons */
+/* Category filters */
 .filters {
   display: flex;
   overflow-x: auto;
@@ -38,6 +38,21 @@ body {
   background: #eee;
   cursor: pointer;
   white-space: nowrap;
+}
+
+/* Veg toggle */
+.veg-filter {
+  text-align: center;
+  padding: 5px;
+}
+
+.veg-filter button {
+  margin: 3px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 20px;
+  background: #eee;
+  cursor: pointer;
 }
 
 /* Grid */
@@ -103,15 +118,24 @@ button.order {
 
 <body>
 
-<div class="header">🍽️ Hotel Menu</div>
+<div class="header">🍽️ Satyabati Hindu Hotel</div>
 
 <div class="filters" id="filters"></div>
+
+<div class="veg-filter">
+  <button onclick="filterVeg('All')">All</button>
+  <button onclick="filterVeg('Veg')">Veg</button>
+  <button onclick="filterVeg('Non-Veg')">Non-Veg</button>
+</div>
+
 <div id="products"></div>
 
 <script>
 const sheetURL = "https://docs.google.com/spreadsheets/d/1ha14_n8IdltiVwrMFYSC5e8l5fnMkJUQkxHqd1KzpcQ/gviz/tq?tqx=out:json";
 
 let allProducts = [];
+let currentCategory = "All";
+let currentVeg = "All";
 
 fetch(sheetURL)
 .then(res => res.text())
@@ -137,7 +161,6 @@ fetch(sheetURL)
     }
   });
 
-  // Sort by priority
   allProducts.sort((a, b) => (a.priority || 999) - (b.priority || 999));
 
   createFilters();
@@ -147,7 +170,7 @@ fetch(sheetURL)
 function createFilters() {
   const categories = [...new Set(allProducts.map(p => p.category))];
 
-  let html = `<button onclick="displayProducts(allProducts)">All</button>`;
+  let html = `<button onclick="filterCategory('All')">All</button>`;
 
   categories.forEach(cat => {
     html += `<button onclick="filterCategory('${cat}')">${cat}</button>`;
@@ -157,7 +180,26 @@ function createFilters() {
 }
 
 function filterCategory(cat) {
-  const filtered = allProducts.filter(p => p.category === cat);
+  currentCategory = cat;
+  applyFilters();
+}
+
+function filterVeg(type) {
+  currentVeg = type;
+  applyFilters();
+}
+
+function applyFilters() {
+  let filtered = allProducts;
+
+  if (currentCategory !== "All") {
+    filtered = filtered.filter(p => p.category === currentCategory);
+  }
+
+  if (currentVeg !== "All") {
+    filtered = filtered.filter(p => p.subcategory === currentVeg);
+  }
+
   displayProducts(filtered);
 }
 
