@@ -5,79 +5,113 @@
 <title>Satyabati Hindu Hotel</title>
 
 <style>
-body { margin:0; font-family:Arial; background:#fff; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #ffffff;
+}
 
 /* Header */
 .header {
   position: sticky;
-  top:0;
-  background:#fff;
-  padding:12px;
-  text-align:center;
-  font-weight:bold;
-  border-bottom:1px solid #eee;
+  top: 0;
+  background: #ffffff;
+  padding: 14px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+}
+
+/* Category filters */
+.filters {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 10px;
+}
+
+.filters button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 20px;
+  background: #eee;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Veg toggle */
+.veg-filter {
+  text-align: center;
+  padding: 5px;
+}
+
+.veg-filter button {
+  margin: 3px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 20px;
+  background: #eee;
+  cursor: pointer;
 }
 
 /* Grid */
 #products {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-  padding:10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 12px;
 }
 
 /* Card */
 .card {
-  background:#fff;
-  border-radius:12px;
-  overflow:hidden;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+/* Image */
 .card img {
-  width:100%;
-  height:120px;
-  object-fit:cover;
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
 }
 
-.content { padding:8px; }
-
-.price { font-weight:bold; }
-
-/* Quantity */
-.qty {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-top:5px;
+/* Content */
+.content {
+  padding: 10px;
 }
 
-.qty button {
-  padding:5px 10px;
-  background:#ddd;
-  border:none;
-  cursor:pointer;
+.content h3 {
+  font-size: 14px;
+  margin: 5px 0;
 }
 
-/* Order button */
-.order {
-  width:100%;
-  background:#FFC107;
-  border:none;
-  padding:8px;
-  cursor:pointer;
+.desc {
+  font-size: 12px;
+  color: #666;
+  height: 30px;
+  overflow: hidden;
 }
 
-/* Cart button */
-.cart-btn {
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  background:#000;
-  color:#fff;
-  padding:12px;
-  border-radius:50%;
-  cursor:pointer;
+/* Price */
+.price {
+  font-weight: bold;
+  color: #000;
+  margin-top: 5px;
+}
+
+/* Button */
+button.order {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: #FFC107;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 0 0 14px 14px;
 }
 </style>
 </head>
@@ -86,100 +120,112 @@ body { margin:0; font-family:Arial; background:#fff; }
 
 <div class="header">🍽️ Satyabati Hindu Hotel</div>
 
-<div id="products"></div>
+<div class="filters" id="filters"></div>
 
-<div class="cart-btn" onclick="openCart()">🛒</div>
+<div class="veg-filter">
+  <button onclick="filterVeg('All')">All</button>
+  <button onclick="filterVeg('Veg')">Veg</button>
+  <button onclick="filterVeg('Non-Veg')">Non-Veg</button>
+</div>
+
+<div id="products"></div>
 
 <script>
 const sheetURL = "https://docs.google.com/spreadsheets/d/1ha14_n8IdltiVwrMFYSC5e8l5fnMkJUQkxHqd1KzpcQ/gviz/tq?tqx=out:json";
 
-let products = [];
-let cart = {};
+let allProducts = [];
+let currentCategory = "All";
+let currentVeg = "All";
 
 fetch(sheetURL)
 .then(res => res.text())
 .then(data => {
-  const json = JSON.parse(data.substr(47).slice(0,-2));
+  const json = JSON.parse(data.substr(47).slice(0, -2));
   const rows = json.table.rows;
 
   rows.forEach(r => {
-    const p = {
-      id: r.c[1]?.v,
+    const item = {
+      category: r.c[2]?.v,
+      subcategory: r.c[3]?.v,
       name: r.c[4]?.v,
       price: r.c[5]?.v,
       img: r.c[6]?.v,
+      desc: r.c[7]?.v,
       msg: r.c[8]?.v,
-      show: r.c[11]?.v
+      show: r.c[11]?.v,
+      priority: r.c[14]?.v
     };
 
-    if(p.name && p.show==="Yes") products.push(p);
+    if (item.name && item.show === "Yes") {
+      allProducts.push(item);
+    }
   });
 
-  displayProducts();
+  allProducts.sort((a, b) => (a.priority || 999) - (b.priority || 999));
+
+  createFilters();
+  displayProducts(allProducts);
 });
 
-function displayProducts(){
-  let html="";
-  products.forEach((p,i)=>{
-    html+=`
+function createFilters() {
+  const categories = [...new Set(allProducts.map(p => p.category))];
+
+  let html = `<button onclick="filterCategory('All')">All</button>`;
+
+  categories.forEach(cat => {
+    html += `<button onclick="filterCategory('${cat}')">${cat}</button>`;
+  });
+
+  document.getElementById("filters").innerHTML = html;
+}
+
+function filterCategory(cat) {
+  currentCategory = cat;
+  applyFilters();
+}
+
+function filterVeg(type) {
+  currentVeg = type;
+  applyFilters();
+}
+
+function applyFilters() {
+  let filtered = allProducts;
+
+  if (currentCategory !== "All") {
+    filtered = filtered.filter(p => p.category === currentCategory);
+  }
+
+  if (currentVeg !== "All") {
+    filtered = filtered.filter(p => p.subcategory === currentVeg);
+  }
+
+  displayProducts(filtered);
+}
+
+function displayProducts(list) {
+  let html = "";
+
+  list.forEach(p => {
+    html += `
     <div class="card">
       <img src="${p.img}" onerror="this.src='https://via.placeholder.com/150'">
       <div class="content">
-        <h4>${p.name}</h4>
-        <div class="price">₹${p.price}</div>
-
-        <div class="qty">
-          <button onclick="changeQty('${p.id}',-1)">-</button>
-          <span id="qty-${p.id}">0</span>
-          <button onclick="changeQty('${p.id}',1)">+</button>
-        </div>
-
-        <button class="order" onclick="addToCart('${p.id}')">Add</button>
+        <h3>${p.name}</h3>
+        <p class="desc">${p.desc}</p>
+        <p class="price">₹${p.price}</p>
       </div>
+      <button class="order" onclick="order('${p.msg}')">Order</button>
     </div>
     `;
   });
 
-  document.getElementById("products").innerHTML=html;
+  document.getElementById("products").innerHTML = html;
 }
 
-function changeQty(id,val){
-  let q = cart[id]?.qty || 0;
-  q += val;
-  if(q<0) q=0;
-
-  if(!cart[id]) cart[id]={qty:0};
-  cart[id].qty=q;
-
-  document.getElementById("qty-"+id).innerText=q;
-}
-
-function addToCart(id){
-  const p = products.find(x=>x.id===id);
-  if(!cart[id] || cart[id].qty===0){
-    alert("Select quantity first");
-    return;
-  }
-  cart[id].name=p.name;
-  cart[id].price=p.price;
-}
-
-function openCart(){
-  let text="Order:\n";
-  let total=0;
-
-  for(let id in cart){
-    let item=cart[id];
-    if(item.qty>0){
-      let t=item.qty*item.price;
-      total+=t;
-      text+=`${item.name} x ${item.qty} = ₹${t}\n`;
-    }
-  }
-
-  text+=`\nTotal = ₹${total}`;
-
-  window.open(`https://wa.me/919836697502?text=${encodeURIComponent(text)}`);
+function order(msg) {
+  const phone = "919836697502";
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
 }
 </script>
 
