@@ -1,105 +1,185 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Hotel Menu</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <style>
-    body {
-      font-family: Arial;
-      padding: 10px;
-      background: #f5f5f5;
-    }
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hotel Menu</title>
 
-    h2 {
-      text-align: center;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #ffffff;
+}
 
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 10px;
-      margin: 10px;
-      width: 45%;
-      display: inline-block;
-      vertical-align: top;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    }
+/* Header */
+.header {
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  padding: 12px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+}
 
-    img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
+/* Filter buttons */
+.filters {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 10px;
+}
 
-    h3 {
-      margin: 5px 0;
-    }
+.filters button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 20px;
+  background: #eee;
+  cursor: pointer;
+  white-space: nowrap;
+}
 
-    p {
-      margin: 5px 0;
-      color: #555;
-    }
+/* Grid */
+#products {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 12px;
+}
 
-    .price {
-      font-weight: bold;
-      font-size: 18px;
-      color: green;
-    }
+/* Card */
+.card {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
 
-    button {
-      width: 100%;
-      padding: 10px;
-      background: green;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      margin-top: 5px;
-      cursor: pointer;
-    }
-  </style>
+/* Image */
+.card img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+}
+
+/* Content */
+.content {
+  padding: 10px;
+}
+
+.content h3 {
+  font-size: 14px;
+  margin: 5px 0;
+}
+
+.desc {
+  font-size: 12px;
+  color: #666;
+  height: 30px;
+  overflow: hidden;
+}
+
+/* Price */
+.price {
+  font-weight: bold;
+  color: #000;
+  margin-top: 5px;
+}
+
+/* Button */
+button.order {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: #FFC107;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 0 0 14px 14px;
+}
+</style>
 </head>
 
 <body>
 
-<h2>🍽️ Hotel Menu</h2>
+<div class="header">🍽️ Hotel Menu</div>
+
+<div class="filters" id="filters"></div>
 <div id="products"></div>
 
 <script>
 const sheetURL = "https://docs.google.com/spreadsheets/d/1ha14_n8IdltiVwrMFYSC5e8l5fnMkJUQkxHqd1KzpcQ/gviz/tq?tqx=out:json";
 
+let allProducts = [];
+
 fetch(sheetURL)
-  .then(res => res.text())
-  .then(data => {
-    const json = JSON.parse(data.substr(47).slice(0, -2));
-    const rows = json.table.rows;
+.then(res => res.text())
+.then(data => {
+  const json = JSON.parse(data.substr(47).slice(0, -2));
+  const rows = json.table.rows;
 
-    let html = "";
+  rows.forEach(r => {
+    const item = {
+      category: r.c[2]?.v,
+      subcategory: r.c[3]?.v,
+      name: r.c[4]?.v,
+      price: r.c[5]?.v,
+      img: r.c[6]?.v,
+      desc: r.c[7]?.v,
+      msg: r.c[8]?.v,
+      show: r.c[11]?.v,
+      priority: r.c[14]?.v
+    };
 
-    rows.forEach(r => {
-      const name = r.c[4]?.v;
-      const price = r.c[5]?.v;
-      const img = r.c[6]?.v;
-      const desc = r.c[7]?.v;
-      const msg = r.c[8]?.v;
-      const show = r.c[11]?.v;
-
-      if (!name || show !== "Yes") return;
-
-      html += `
-        <div class="card">
-          <img src="${img}">
-          <h3>${name}</h3>
-          <p>${desc}</p>
-          <p class="price">₹${price}</p>
-          <button onclick="order('${msg}')">Order on WhatsApp</button>
-        </div>
-      `;
-    });
-
-    document.getElementById("products").innerHTML = html;
+    if (item.name && item.show === "Yes") {
+      allProducts.push(item);
+    }
   });
+
+  // Sort by priority
+  allProducts.sort((a, b) => (a.priority || 999) - (b.priority || 999));
+
+  createFilters();
+  displayProducts(allProducts);
+});
+
+function createFilters() {
+  const categories = [...new Set(allProducts.map(p => p.category))];
+
+  let html = `<button onclick="displayProducts(allProducts)">All</button>`;
+
+  categories.forEach(cat => {
+    html += `<button onclick="filterCategory('${cat}')">${cat}</button>`;
+  });
+
+  document.getElementById("filters").innerHTML = html;
+}
+
+function filterCategory(cat) {
+  const filtered = allProducts.filter(p => p.category === cat);
+  displayProducts(filtered);
+}
+
+function displayProducts(list) {
+  let html = "";
+
+  list.forEach(p => {
+    html += `
+    <div class="card">
+      <img src="${p.img}" onerror="this.src='https://via.placeholder.com/150'">
+      <div class="content">
+        <h3>${p.name}</h3>
+        <p class="desc">${p.desc}</p>
+        <p class="price">₹${p.price}</p>
+      </div>
+      <button class="order" onclick="order('${p.msg}')">Order</button>
+    </div>
+    `;
+  });
+
+  document.getElementById("products").innerHTML = html;
+}
 
 function order(msg) {
   const phone = "919836697502";
