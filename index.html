@@ -24,11 +24,11 @@ body {
   z-index: 1000;
 }
 
-/* Home button UPDATED */
+/* Home button */
 .home-btn {
   display: block;
   text-align: center;
-  background: #5A5A5A;  /* updated color */
+  background: #5A5A5A;
   color: white;
   padding: 8px;
   text-decoration: none;
@@ -170,7 +170,6 @@ fetch(sheetURL)
       price: r.c[5]?.v,
       img: r.c[6]?.v,
       desc: r.c[7]?.v,
-      msg: r.c[8]?.v,
       show: r.c[11]?.v,
       priority: r.c[14]?.v
     };
@@ -222,6 +221,14 @@ function applyFilters() {
   displayProducts(filtered);
 }
 
+/* 🔥 UPDATED ORDER BUTTON */
+function goToOrder(name, price) {
+  const url = "https://satyabatihotel-code.github.io/order-page/?item=" 
+              + encodeURIComponent(name) + "&price=" + price;
+
+  window.location.href = url;
+}
+
 function displayProducts(list) {
   let html = "";
 
@@ -234,17 +241,12 @@ function displayProducts(list) {
         <p class="desc">${p.desc}</p>
         <p class="price">₹${p.price}</p>
       </div>
-      <button class="order" onclick="order('${p.msg}')">Order</button>
+      <button class="order" onclick="goToOrder('${p.name}', ${p.price})">Order</button>
     </div>
     `;
   });
 
   document.getElementById("products").innerHTML = html;
-}
-
-function order(msg) {
-  const phone = "919836697502";
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
 }
 </script>
 
