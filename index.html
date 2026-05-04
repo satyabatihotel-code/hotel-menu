@@ -24,11 +24,11 @@ body {
   z-index: 1000;
 }
 
-/* Home button */
+/* Home button UPDATED */
 .home-btn {
   display: block;
   text-align: center;
-  background: black;
+  background: #5A5A5A;  /* updated color */
   color: white;
   padding: 8px;
   text-decoration: none;
@@ -74,7 +74,7 @@ body {
   padding: 12px;
 }
 
-/* Card FIXED HEIGHT */
+/* Card */
 .card {
   display: flex;
   flex-direction: column;
@@ -91,7 +91,7 @@ body {
   object-fit: cover;
 }
 
-/* Content FLEX */
+/* Content */
 .content {
   flex: 1;
   padding: 10px;
@@ -175,7 +175,6 @@ fetch(sheetURL)
       priority: r.c[14]?.v
     };
 
-    // FIXED: show condition
     if (item.name && (item.show === "Yes" || item.show === "yes" || item.show === true)) {
       allProducts.push(item);
     }
